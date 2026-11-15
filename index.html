@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pari Bakers</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --accent:#0ea5e9; --accent2:#38bdf8; --ink:#0f172a; --muted:#64748b; --line:#bae6fd; }
+  body {
+    font-family:'Inter','Noto Sans Devanagari','Noto Sans Bengali',sans-serif;
+    background:linear-gradient(180deg,#f0f9ff 0%,#ffffff 55%,#f0f9ff 100%);
+    color:var(--ink);
+  }
+  .serif { font-family:'Playfair Display',serif; }
+  .glass { background:rgba(255,255,255,.88); backdrop-filter:blur(14px); border:1px solid var(--line); }
+  .acc { color:var(--accent); }
+  .btn-sky { background:linear-gradient(135deg,var(--accent2),var(--accent)); color:#fff; font-weight:600; box-shadow:0 8px 24px -8px rgba(14,165,233,.6); transition:filter .2s, transform .2s; }
+  .btn-sky:hover { filter:brightness(1.05); transform:translateY(-1px); }
+  .btn-sky:disabled { opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
+  .inp { background:#fff; border:1px solid var(--line); border-radius:12px; padding:.6rem .8rem; width:100%; outline:none; color:var(--ink); }
+  .inp:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(14,165,233,.15); }
+  .lbl { display:block; font-size:.75rem; color:var(--muted); margin-bottom:.25rem; }
+  .modal-bg { background:rgba(14,116,144,.25); backdrop-filter:blur(4px); }
+
+  /* Hero */
+  .hero-slide { position:absolute; inset:0; opacity:0; transition:opacity 1.6s ease; background-size:cover; background-position:center; }
+  .hero-slide.active { opacity:1; animation:kb 12s ease-out forwards; }
+  @keyframes kb { from{transform:scale(1)} to{transform:scale(1.08)} }
+  .hero-overlay { background:linear-gradient(to top, #f0f9ff 0%, rgba(14,165,233,.45) 50%, rgba(14,165,233,.15) 100%); }
+  .light-orb { position:absolute; border-radius:9999px; filter:blur(60px); background:radial-gradient(circle,#ffffff 0%,rgba(56,189,248,.5) 60%,transparent 70%); animation:pulse 4s ease-in-out infinite; pointer-events:none; }
+  @keyframes pulse { 0%,100%{opacity:.45; transform:scale(1)} 50%{opacity:.9; transform:scale(1.08)} }
+  .hero-title { color:#fff; text-shadow:0 2px 24px rgba(3,105,161,.45); }
+  .intro-up { animation:introUp 1s cubic-bezier(.2,.7,.2,1) both; }
+  .intro-up-2 { animation:introUp 1s .2s cubic-bezier(.2,.7,.2,1) both; }
+  .intro-up-3 { animation:introUp 1s .4s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes introUp { from{opacity:0; transform:translateY(22px); filter:blur(6px)} to{opacity:1; transform:none; filter:none} }
+  .shine { position:relative; overflow:hidden; }
+  .shine::after { content:''; position:absolute; top:0; left:-75%; width:50%; height:100%; background:linear-gradient(100deg,transparent,rgba(255,255,255,.7),transparent); animation:sweep 3.2s ease-in-out infinite; }
+  @keyframes sweep { 0%{left:-75%} 60%,100%{left:125%} }
+
+  /* Splash */
+  #splash { background:radial-gradient(circle at 50% 40%,#ffffff 0%,#bae6fd 35%,#0ea5e9 100%); transition:opacity .8s ease, visibility .8s; }
+  #splash.gone { opacity:0; visibility:hidden; }
+  .splash-logo { animation:splashIn 1.1s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes splashIn { from{opacity:0; transform:scale(.85); filter:blur(8px)} to{opacity:1; transform:none; filter:none} }
+  .light-glow { animation:glowWhite 1.8s ease-in-out infinite alternate; }
+  @keyframes glowWhite { from{text-shadow:0 0 8px rgba(255,255,255,.4)} to{text-shadow:0 0 28px rgba(255,255,255,1), 0 0 50px rgba(255,255,255,.7)} }
+
+  .card-in { animation:fadeUp .6s ease both; }
+  @keyframes fadeUp { from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none} }
+  .no-scrollbar::-webkit-scrollbar { display:none; }
+  .no-scrollbar { scrollbar-width:none; }
+  select option { background:#fff; color:var(--ink); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body class="antialiased">
+
+<!-- स्प्लैश स्क्रीन -->
+<div id="splash" class="fixed inset-0 z-[90] flex flex-col items-center justify-center">
+  <div class="splash-logo flex flex-col items-center">
+    <i data-lucide="chef-hat" class="w-16 h-16 text-white"></i>
+    <h1 class="serif light-glow text-4xl font-bold text-white mt-4 tracking-wide">Pari Bakers</h1>
+    <p class="text-sky-50 mt-2 text-sm tracking-[.3em] uppercase">Baked with love</p>
+  </div>
+</div>
+
+<header class="sticky top-0 z-40 glass">
+  <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+    <a href="#top" class="flex items-center gap-2">
+      <i data-lucide="chef-hat" class="acc w-6 h-6"></i>
+      <span class="serif text-xl font-bold tracking-wide">Pari <span class="acc">Bakers</span></span>
+    </a>
+    <div class="flex items-center gap-2">
+      <select id="langSel" class="bg-white border border-[#bae6fd] rounded-lg text-sm px-2 py-1.5 outline-none">
+        <option value="en">English</option>
+        <option value="hi">हिन्दी</option>
+        <option value="mr">मराठी</option>
+        <option value="bn">বাংলা</option>
+      </select>
+      <button id="adminBtn" onclick="openAdmin()" style="display:none" class="items-center gap-2 px-3 py-2 rounded-full border border-sky-300 acc text-sm bg-white">
+        <i data-lucide="shield-check" class="w-4 h-4"></i><span data-i="admin"></span>
+      </button>
+      <button onclick="accountClick()" class="flex items-center gap-2 px-3 py-2 rounded-full border border-[#bae6fd] bg-white hover:border-sky-400 text-sm">
+        <i data-lucide="user" class="w-4 h-4"></i><span id="accountLabel">Login</span>
+      </button>
+      <button onclick="openCart()" class="relative p-2">
+        <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+        <span id="cartCount" style="display:none" class="absolute -top-1 -right-1 bg-sky-500 text-white text-[11px] font-bold w-5 h-5 rounded-full items-center justify-center"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section class="relative h-[78vh] min-h-[480px] overflow-hidden">
+    <div id="heroBg" class="absolute inset-0"></div>
+    <video id="heroVideo" class="hidden absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline></video>
+    <div class="absolute inset-0 hero-overlay"></div>
+    <div class="light-orb w-72 h-72 -top-10 -right-10"></div>
+    <div class="light-orb w-56 h-56 top-1/3 left-1/4 opacity-40" style="animation-delay:1.5s"></div>
+    <div class="relative z-10 h-full max-w-7xl mx-auto px-4 flex flex-col justify-end pb-16">
+      <span id="festBadge" class="intro-up inline-flex items-center gap-2 text-xs tracking-[.25em] uppercase text-white rounded-full px-3 py-1 w-fit bg-white/20 border border-white/60 backdrop-blur"></span>
+      <h1 id="heroTitle" class="intro-up-2 hero-title serif shine text-4xl md:text-6xl font-bold mt-4 max-w-3xl leading-tight"></h1>
+      <p id="heroSub" class="intro-up-3 mt-3 text-white max-w-xl drop-shadow"></p>
+      <div class="intro-up-3 mt-6">
+        <a href="#menu" class="btn-sky px-6 py-3 rounded-full w-fit inline-flex gap-2"><span data-i="orderNow"></span><i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="menu" class="max-w-7xl mx-auto px-4 py-12">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+      <div>
+        <h2 class="serif text-3xl font-bold" data-i="ourMenu"></h2>
+        <p class="text-slate-500 mt-1" data-i="menuSub"></p>
+      </div>
+      <div id="catChips" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
+    </div>
+    <div id="menuGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+  </section>
+</main>
+
+<footer class="border-t border-[#bae6fd] py-8 text-center text-sm text-slate-500 bg-white/60">
+  <p class="serif acc text-lg">Pari Bakers</p>
+  <p class="mt-1" data-i="tagline"></p>
+</footer>
+
+<!-- कस्टमाइज़ मॉडल -->
+<div id="itemModal" class="modal-bg fixed inset-0 z-50 hidden items-center justify-center p-4" onclick="if(event.target===this)closeModal('itemModal')">
+  <div class="glass rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto relative card-in">
+    <button onclick="closeModal('itemModal')" class="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/90 shadow"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div id="itemBody"></div>
+  </div>
+</div>
+
+<!-- कार्ट मॉडल -->
+<div id="cartModal" class="modal-bg fixed inset-0 z-50 hidden items-center justify-center p-4" onclick="if(event.target===this)closeModal('cartModal')">
+  <div class="glass rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 relative card-in">
+    <button onclick="closeModal('cartModal')" class="absolute top-4 right-4 p-2 rounded-full bg-white shadow"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <h3 class="serif text-2xl font-bold" data-i="cart"></h3>
+    <div id="cartItems" class="mt-4"></div>
+    <div id="minWarn" class="hidden mt-4 text-sm text-amber-700 bg-amber-100 border border-amber-300 rounded-xl p-3"></div>
+    <div class="mt-5 flex justify-between items-center">
+      <span class="text-slate-500" data-i="total"></span>
+      <span id="cartTotal" class="text-xl font-bold acc">₹0</span>
+    </div>
+    <button id="checkoutBtn" onclick="openCheckout()" class="btn-sky w-full mt-5 py-3 rounded-full" data-i="checkout"></button>
+  </div>
+</div>
+
+<!-- चेकआउट मॉडल -->
+<div id="checkoutModal" class="modal-bg fixed inset-0 z-50 hidden items-center justify-center p-4" onclick="if(event.target===this)closeModal('checkoutModal')">
+  <div class="glass rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 relative card-in">
+    <button onclick="closeModal('checkoutModal')" class="absolute top-4 right-4 p-2 rounded-full bg-white shadow"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <h3 class="serif text-2xl font-bold" data-i="orderDetails"></h3>
+    <div class="space-y-4 mt-5">
+      <div><label class="lbl" data-i="name"></label><input id="ckName" class="inp" autocomplete="name"></div>
+      <div><label class="lbl" data-i="phone"></label><input id="ckPhone" class="inp" type="tel"></div>
+      <div><label class="lbl" data-i="address"></label><textarea id="ckAddr" rows="2" class="inp"></textarea></div>
+      <div><label class="lbl"><span data-i="alt"></span> <span data-i="optional"></span></label><textarea id="ckAlt" rows="2" class="inp"></textarea></div>
+      <div><label class="lbl"><span data-i="special"></span> <span data-i="optional"></span></label><input id="ckNote" class="inp"></div>
+    </div>
+    <button onclick="placeOrder()" class="btn-sky w-full mt-6 py-3 rounded-full flex items-center justify-center gap-2" data-i="placeOrder"></button>
+  </div>
+</div>
+
+<!-- लॉगिन मॉडल -->
+<div id="loginModal" class="modal-bg fixed inset-0 z-50 hidden items-center justify-center p-4" onclick="if(event.target===this)closeModal('loginModal')">
+  <div class="glass rounded-3xl w-full max-w-md relative card-in">
+    <button onclick="closeModal('loginModal')" class="absolute top-4 right-4 p-2 rounded-full bg-white shadow z-10"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div id="loginBody"></div>
+  </div>
+</div>
+
+<!-- एडमिन पैनल -->
+<section id="adminPanel" class="fixed inset-0 z-[60] bg-[#f0f9ff] overflow-y-auto hidden">
+  <div class="sticky top-0 z-10 glass">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <h2 class="serif text-xl font-bold acc" data-i="adminPanel"></h2>
+      <div class="flex gap-2">
+        <button onclick="lockAdmin()" class="px-4 py-2 rounded-full border border-[#bae6fd] bg-white text-sm inline-flex items-center gap-2"><i data-lucide="lock" class="w-4 h-4"></i><span data-i="lockAdmin"></span></button>
+        <button onclick="closeAdmin()" class="p-2"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+    </div>
+  </div>
+  <div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <div class="glass rounded-2xl p-5 grid md:grid-cols-2 gap-4">
+      <div><label class="lbl" data-i="festivalMode"></label><select id="festSel" class="inp" onchange="setFest(this.value)"></select></div>
+      <div class="flex items-end"><button onclick="resetMenu()" class="px-4 py-2.5 rounded-full border border-[#bae6fd] bg-white text-sm w-full" data-i="resetMenu"></button></div>
+    </div>
+
+    <div class="glass rounded-2xl p-5">
+      <h3 class="font-semibold mb-4" data-i="addDish"></h3>
+      <div class="grid md:grid-cols-4 gap-3">
+        <input id="nEn" class="inp" placeholder="नाम · English">
+        <input id="nHi" class="inp" placeholder="नाम · हिन्दी">
+        <input id="nMr" class="inp" placeholder="नाम · मराठी">
+        <input id="nBn" class="inp" placeholder="नाम · বাংলা">
+        <input id="dEn" class="inp" placeholder="विवरण · English">
+        <input id="dHi" class="inp" placeholder="विवरण · हिन्दी">
+        <input id="dMr" class="inp" placeholder="विवरण · मराठी">
+        <input id="dBn" class="inp" placeholder="विवरण · বাংলা">
+        <select id="nCat" class="inp">
+          <option value="pizza">Pizza</option><option value="burger">Burger</option><option value="cake">Cake</option><option value="pastry">Pastry</option><option value="shake">Shake</option>
+        </select>
+        <input id="nPrice" type="number" min="0" class="inp" placeholder="कीमत ₹">
+        <input id="nOpts" class="inp md:col-span-2" placeholder="Remove Onion:-10, Extra Cheese:+60">
+        <input id="nImg" class="inp md:col-span-4" placeholder="इमेज URL (वैकल्पिक)">
+      </div>
+      <button onclick="addDish()" class="btn-sky mt-4 px-6 py-2.5 rounded-full" data-i="addDish"></button>
+    </div>
+
+    <div id="adminList" class="space-y-4"></div>
+  </div>
+</section>
+
+<div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] flex flex-col gap-2 items-center w-[90%] max-w-sm"></div>
+
+<script>
+/* ============================ CONFIG ============================ */
+const CONFIG = {
+  adminPhone: '6393260290',
+  adminPassword: 'PariBakers@Admin2026',   // लाइव करने से पहले ज़रूर बदलें
+  whatsapp: '916393260290',
+  minOrder: 300,
+  splashMs: 1600,
+
+  hero: {
+    video: '',                              // MP4 लिंक, जैसे 'https://example.com/reel.mp4'. खाली = इमेज स्लाइडशो
+    interval: 6000,
+    images: [
+      'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1800&q=80',
+      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1800&q=80',
+      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1800&q=80',
+      'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=1800&q=80'
+    ]
+  }
+};
+
+const IMG = {
+  pizza:  'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&q=80',
+  burger: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80',
+  cake:   'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&q=80',
+  pastry: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&q=80',
+  shake:  'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=800&q=80'
+};
+
+const CATS = ['pizza','burger','cake','pastry','shake'];
+
+/* ============================ FESTIVALS (अनुमानित तारीखें) ============================ */
+const FESTIVALS = [
+  { id:'newyear', from:'12-28', to:'01-03', accent:'#0ea5e9',
+    name:{en:'New Year Celebration', hi:'नव वर्ष उत्सव', mr:'नववर्ष उत्सव', bn:'নববর্ষ উৎসব'},
+    sub:{en:'Ring in the year with our midnight celebration cakes and pastries.', hi:'आधी रात के उत्सव वाले केक और पेस्ट्री से नए साल का स्वागत करें।', mr:'मध्यरात्रीच्या उत्सव केक व पेस्ट्रीसह नवीन वर्षाचे स्वागत करा.', bn:'মধ্যরাতের উৎসবের কেক ও পেস্ট্রি দিয়ে নতুন বছরকে স্বাগত জানান।'} },
+  { id:'sankranti', from:'01-12', to:'01-15', accent:'#0284c7',
+    name:{en:'Makar Sankranti Specials', hi:'मकर संक्रांति विशेष', mr:'मकर संक्रांत विशेष', bn:'মকর সংক্রান্তি বিশেষ'},
+    sub:{en:'Festive sweets and fresh bakes to share with family.', hi:'परिवार के साथ बांटने के लिए त्योहारी मिठाइयां और ताज़ा बेक।', mr:'कुटुंबासोबत वाटण्यासाठी सणाच्या गोड पदार्थांसह ताजे बेक.', bn:'পরিবারের সঙ্গে ভাগ করে নিতে উৎসবের মিষ্টি ও তাজা বেক।'} },
+  { id:'holi', from:'03-01', to:'03-05', accent:'#38bdf8',
+    name:{en:'Holi Specials', hi:'होली विशेष', mr:'होळी विशेष', bn:'হোলি বিশেষ'},
+    sub:{en:'Colourful cakes and shakes to celebrate the festival of colours.', hi:'रंगों के त्योहार का जश्न रंगीन केक और शेक के साथ।', mr:'रंगांच्या सणाच्या आनंदासाठी रंगीत केक आणि शेक.', bn:'রঙের উৎসব উদযাপনে রঙিন কেক ও শেক।'} },
+  { id:'diwali', from:'10-28', to:'11-12', accent:'#0ea5e9',
+    name:{en:'Diwali Specials', hi:'दिवाली विशेष', mr:'दिवाळी विशेष', bn:'দীপাবলি বিশেষ'},
+    sub:{en:'Festive sweets, gourmet bakes and gift-ready cakes this Diwali.', hi:'इस दिवाली त्योहारी मिठाइयां, गोरमेट बेक और गिफ्ट-रेडी केक।', mr:'यंदाच्या दिवाळीसाठी सणाचे गोड पदार्थ, गोरमेट बेक आणि भेटीसाठी केक.', bn:'এবারের দীপাবলিতে উৎসবের মিষ্টি, গুরমে বেক ও উপহার-উপযোগী কেক।'} },
+  { id:'christmas', from:'12-20', to:'12-26', accent:'#0369a1',
+    name:{en:'Christmas Specials', hi:'क्रिसमस विशेष', mr:'ख्रिसमस विशेष', bn:'ক্রিসমাস বিশেষ'},
+    sub:{en:'Yule-season cakes and pastries for your festive table.', hi:'आपकी उत्सव मेज़ के लिए क्रिसमस केक और पेस्ट्री।', mr:'तुमच्या सणाच्या टेबलासाठी ख्रिसमस केक आणि पेस्ट्री.', bn:'আপনার উৎসবের টেবিলের জন্য ক্রিসমাস কেক ও পেস্ট্রি।'} },
+  { id:'independence', from:'08-13', to:'08-16', accent:'#0ea5e9',
+    name:{en:'Independence Day Specials', hi:'स्वतंत्रता दिवस विशेष', mr:'स्वातंत्र्य दिन विशेष', bn:'স্বাধীনতা দিবস বিশেষ'},
+    sub:{en:'Celebrate freedom with our tricolour-inspired bakes.', hi:'तिरंगे से प्रेरित बेक के साथ आज़ादी का जश्न मनाएं।', mr:'तिरंगी प्रेरणेच्या बेकसह स्वातंत्र्याचा उत्सव साजरा करा.', bn:'ত্রিবর্ণ-অনুপ্রাণিত বেকের সঙ্গে স্বাধীনতা উদযাপন করুন।'} }
+];
+
+/* ============================ TRANSLATIONS ============================ */
+const T = {
+  en: {
+    ourMenu:'Our Menu', menuSub:'Freshly baked and made to order', orderNow:'Order Now',
+    heroTitle:'Baked with Love, Delivered with Care', heroSub:'Premium pizzas, gourmet burgers, celebration cakes, pastries and shakes.',
+    signature:'Signature Collection', all:'All', pizza:'Pizza', burger:'Burgers', cake:'Cakes', pastry:'Pastries', shake:'Shakes',
+    addToCart:'Add to cart', customize:'Customize', customizations:'Customizations', cart:'Your Cart', empty:'Your cart is empty',
+    total:'Total', checkout:'Checkout', minWarn:'Minimum order amount is ₹300. Please add more items to continue.',
+    remaining:'Add {x} more to place your order', login:'Login', customerLoginTitle:'Login to order', adminLoginTitle:'Admin Login',
+    phone:'Phone Number', sendOtp:'Send OTP', otp:'Enter 4-digit OTP', verify:'Verify & Login', otpSent:'OTP sent to your phone',
+    password:'Admin Password', unlock:'Unlock', orderDetails:'Delivery Details', name:'Full Name', address:'Delivery Address',
+    alt:'Alternate / Secondary Address', optional:'(optional)', special:'Special instructions', placeOrder:'Confirm & Send on WhatsApp',
+    admin:'Admin', adminPanel:'Admin Panel', addDish:'Add New Dish', price:'Price (₹)', options:'Customizations (Name:±amount)',
+    image:'Image URL', category:'Category', resetMenu:'Reset menu to default', festivalMode:'Festival banner', auto:'Automatic (by date)', none:'Off',
+    invalidPhone:'Enter a valid 10-digit phone number', invalidOtp:'Incorrect OTP', wrongPw:'Wrong admin password',
+    fillAll:'Please fill all required fields', orderSent:'Order sent to WhatsApp!', loginFirst:'Please login to place an order',
+    added:'Added to cart', lockAdmin:'Lock', confirmLogout:'Log out now?', loggedOut:'Logged out', menuUpdated:'Menu updated',
+    dishAdded:'Dish added', delConfirm:'Delete this dish?', resetConfirm:'Reset menu to default? All changes will be lost.',
+    tagline:'Baked with love · Delivered with care', welcome:'Welcome!'
+  },
+  hi: {
+    ourMenu:'हमारा मेन्यू', menuSub:'ताज़ा बना, आपके ऑर्डर पर', orderNow:'अभी ऑर्डर करें',
+    heroTitle:'प्यार से बेक, देखभाल से डिलीवर', heroSub:'प्रीमियम पिज़्ज़ा, गोरमेट बर्गर, उत्सव केक, पेस्ट्री और शेक।',
+    signature:'सिग्नेचर कलेक्शन', all:'सभी', pizza:'पिज़्ज़ा', burger:'बर्गर', cake:'केक', pastry:'पेस्ट्री', shake:'शेक',
+    addToCart:'कार्ट में डालें', customize:'कस्टमाइज़ करें', customizations:'कस्टमाइज़ेशन', cart:'आपकी कार्ट', empty:'आपकी कार्ट खाली है',
+    total:'कुल', checkout:'चेकआउट', minWarn:'न्यूनतम ऑर्डर राशि ₹300 है। जारी रखने के लिए और आइटम जोड़ें।',
+    remaining:'ऑर्डर के लिए {x} और जोड़ें', login:'लॉगिन', customerLoginTitle:'ऑर्डर के लिए लॉगिन करें', adminLoginTitle:'एडमिन लॉगिन',
+    phone:'फ़ोन नंबर', sendOtp:'OTP भेजें', otp:'4 अंकों का OTP डालें', verify:'सत्यापित करें और लॉगिन', otpSent:'OTP आपके फ़ोन पर भेजा गया',
+    password:'एडमिन पासवर्ड', unlock:'अनलॉक', orderDetails:'डिलीवरी विवरण', name:'पूरा नाम', address:'डिलीवरी पता',
+    alt:'वैकल्पिक पता', optional:'(वैकल्पिक)', special:'विशेष निर्देश', placeOrder:'पुष्टि करें और WhatsApp पर भेजें',
+    admin:'एडमिन', adminPanel:'एडमिन पैनल', addDish:'नया आइटम जोड़ें', price:'कीमत (₹)', options:'कस्टमाइज़ेशन (नाम:राशि)',
+    image:'इमेज URL', category:'श्रेणी', resetMenu:'मेन्यू डिफ़ॉल्ट पर रीसेट करें', festivalMode:'त्योहार बैनर', auto:'स्वचालित (तारीख अनुसार)', none:'बंद',
+    invalidPhone:'सही 10 अंकों का फ़ोन नंबर डालें', invalidOtp:'गलत OTP', wrongPw:'गलत एडमिन पासवर्ड',
+    fillAll:'कृपया सभी ज़रूरी फ़ील्ड भरें', orderSent:'ऑर्डर WhatsApp पर भेजा गया!', loginFirst:'ऑर्डर देने के लिए कृपया लॉगिन करें',
+    added:'कार्ट में जोड़ा गया', lockAdmin:'लॉक करें', confirmLogout:'अभी लॉगआउट करें?', loggedOut:'लॉगआउट हो गया', menuUpdated:'मेन्यू अपडेट हुआ',
+    dishAdded:'आइटम जोड़ा गया', delConfirm:'यह आइटम हटाएं?', resetConfirm:'मेन्यू डिफ़ॉल्ट पर रीसेट करें? सभी बदलाव खो जाएंगे।',
+    tagline:'प्यार से बेक · देखभाल से डिलीवर', welcome:'स्वागत है!'
+  },
+  mr: {
+    ourMenu:'आमचा मेनू', menuSub:'ताजे बनवलेले, ऑर्डरनुसार', orderNow:'आता ऑर्डर करा',
+    heroTitle:'प्रेमाने बेक, काळजीने डिलिव्हर', heroSub:'प्रीमियम पिझ्झा, गोरमेट बर्गर, उत्सव केक, पेस्ट्री आणि शेक.',
+    signature:'सिग्नेचर कलेक्शन', all:'सर्व', pizza:'पिझ्झा', burger:'बर्गर', cake:'केक', pastry:'पेस्ट्री', shake:'शेक',
+    addToCart:'कार्टमध्ये टाका', customize:'कस्टमाइज करा', customizations:'कस्टमायझेशन', cart:'तुमची कार्ट', empty:'तुमची कार्ट रिकामी आहे',
+    total:'एकूण', checkout:'चेकआउट', minWarn:'किमान ऑर्डर रक्कम ₹300 आहे. पुढे जाण्यासाठी आणखी वस्तू जोडा.',
+    remaining:'ऑर्डरसाठी आणखी {x} जोडा', login:'लॉगिन', customerLoginTitle:'ऑर्डरसाठी लॉगिन करा', adminLoginTitle:'अॅडमिन लॉगिन',
+    phone:'फोन नंबर', sendOtp:'OTP पाठवा', otp:'4 अंकी OTP टाका', verify:'पडताळा आणि लॉगिन', otpSent:'OTP तुमच्या फोनवर पाठवला',
+    password:'अॅडमिन पासवर्ड', unlock:'अनलॉक', orderDetails:'डिलिव्हरी तपशील', name:'पूर्ण नाव', address:'डिलिव्हरी पत्ता',
+    alt:'पर्यायी पत्ता', optional:'(पर्यायी)', special:'विशेष सूचना', placeOrder:'पुष्टी करा आणि WhatsApp वर पाठवा',
+    admin:'अॅडमिन', adminPanel:'अॅडमिन पॅनल', addDish:'नवीन पदार्थ जोडा', price:'किंमत (₹)', options:'कस्टमायझेशन (नाव:रक्कम)',
+    image:'इमेज URL', category:'प्रकार', resetMenu:'मेनू डीफॉल्टवर रीसेट करा', festivalMode:'सण बॅनर', auto:'स्वयंचलित (तारखेनुसार)', none:'बंद',
+    invalidPhone:'योग्य 10 अंकी फोन नंबर टाका', invalidOtp:'चुकीचा OTP', wrongPw:'चुकीचा अॅडमिन पासवर्ड',
+    fillAll:'कृपया सर्व आवश्यक माहिती भरा', orderSent:'ऑर्डर WhatsApp वर पाठवली!', loginFirst:'ऑर्डर देण्यासाठी कृपया लॉगिन करा',
+    added:'कार्टमध्ये जोडले', lockAdmin:'लॉक करा', confirmLogout:'आता लॉगआउट करायचे?', loggedOut:'लॉगआउट झाले', menuUpdated:'मेनू अपडेट झाला',
+    dishAdded:'पदार्थ जोडला', delConfirm:'हा पदार्थ काढायचा?', resetConfirm:'मेनू डीफॉल्टवर रीसेट करायचा? सर्व बदल जातील.',
+    tagline:'प्रेमाने बेक · काळजीने डिलिव्हर', welcome:'स्वागत आहे!'
+  },
+  bn: {
+    ourMenu:'আমাদের মেনু', menuSub:'তাজা বানানো, অর্ডার অনুযায়ী', orderNow:'এখন অর্ডার করুন',
+    heroTitle:'ভালোবাসায় বেক, যত্নে ডেলিভারি', heroSub:'প্রিমিয়াম পিৎজা, গুরমে বার্গার, উৎসবের কেক, পেস্ট্রি ও শেক।',
+    signature:'সিগনেচার কালেকশন', all:'সব', pizza:'পিৎজা', burger:'বার্গার', cake:'কেক', pastry:'পেস্ট্রি', shake:'শেক',
+    addToCart:'কার্টে যোগ করুন', customize:'কাস্টমাইজ করুন', customizations:'কাস্টমাইজেশন', cart:'আপনার কার্ট', empty:'আপনার কার্ট খালি',
+    total:'মোট', checkout:'চেকআউট', minWarn:'সর্বনিম্ন অর্ডার ₹300। এগিয়ে যেতে আরও আইটেম যোগ করুন।',
+    remaining:'অর্ডারের জন্য আরও {x} যোগ করুন', login:'লগইন', customerLoginTitle:'অর্ডার করতে লগইন করুন', adminLoginTitle:'অ্যাডমিন লগইন',
+    phone:'ফোন নম্বর', sendOtp:'OTP পাঠান', otp:'৪ অঙ্কের OTP লিখুন', verify:'যাচাই করে লগইন', otpSent:'আপনার ফোনে OTP পাঠানো হয়েছে',
+    password:'অ্যাডমিন পাসওয়ার্ড', unlock:'আনলক', orderDetails:'ডেলিভারি বিবরণ', name:'পুরো নাম', address:'ডেলিভারি ঠিকানা',
+    alt:'বিকল্প ঠিকানা', optional:'(ঐচ্ছিক)', special:'বিশেষ নির্দেশ', placeOrder:'নিশ্চিত করে WhatsApp-এ পাঠান',
+    admin:'অ্যাডমিন', adminPanel:'অ্যাডমিন প্যানেল', addDish:'নতুন আইটেম যোগ করুন', price:'দাম (₹)', options:'কাস্টমাইজেশন (নাম:পরিমাণ)',
+    image:'ছবির URL', category:'ধরন', resetMenu:'মেনু ডিফল্টে ফিরিয়ে আনুন', festivalMode:'উৎসব ব্যানার', auto:'স্বয়ংক্রিয় (তারিখ অনুযায়ী)', none:'বন্ধ',
+    invalidPhone:'সঠিক ১০ অঙ্কের ফোন নম্বর দিন', invalidOtp:'ভুল OTP', wrongPw:'ভুল অ্যাডমিন পাসওয়ার্ড',
+    fillAll:'সব প্রয়োজনীয় তথ্য পূরণ করুন', orderSent:'অর্ডার WhatsApp-এ পাঠানো হয়েছে!', loginFirst:'অর্ডার করতে আগে লগইন করুন',
+    added:'কার্টে যোগ হয়েছে', lockAdmin:'লক করুন', confirmLogout:'এখন লগআউট করবেন?', loggedOut:'লগআউট হয়েছে', menuUpdated:'মেনু আপডেট হয়েছে',
+    dishAdded:'আইটেম যোগ হয়েছে', delConfirm:'এই আইটেমটি মুছবেন?', resetConfirm:'মেনু ডিফল্টে ফিরিয়ে আনবেন? সব পরিবর্তন হারিয়ে যাবে।',
+    tagline:'ভালোবাসায় বেক · যত্নে ডেলিভারি', welcome:'স্বাগতম!'
+  }
+};
+
+/* ============================ MENU DATA ============================ */
+const OPT = {
+  noOnion:     {id:'noOnion',     label:{en:'No Onion',         hi:'प्याज़ नहीं',          mr:'कांदा नको',         bn:'পেঁয়াজ ছাড়া'}},
+  noCapsicum:  {id:'noCapsicum',  label:{en:'No Capsicum',      hi:'शिमला मिर्च नहीं',      mr:'ढोबळी मिरची नको',    bn:'ক্যাপসিকাম ছাড়া'}},
+  noSauce:     {id:'noSauce',     label:{en:'No Sauce',         hi:'सॉस नहीं',             mr:'सॉस नको',           bn:'সস ছাড়া'}},
+  noTomato:    {id:'noTomato',    label:{en:'No Tomato',        hi:'टमाटर नहीं',           mr:'टोमॅटो नको',         bn:'টমেটো ছাড়া'}},
+  extraCheese: {id:'extraCheese', label:{en:'Extra Cheese',     hi:'अतिरिक्त चीज़',        mr:'जास्त चीज',         bn:'অতিরিক্ত চিজ'}},
+  extraOlives: {id:'extraOlives', label:{en:'Extra Olives',     hi:'अतिरिक्त जैतून',       mr:'जास्त ऑलिव्ह',       bn:'অতিরিক্ত জলপাই'}},
+  noNuts:      {id:'noNuts',      label:{en:'No Walnuts',       hi:'अखरोट नहीं',           mr:'अक्रोड नको',         bn:'আখরোট ছাড়া'}},
+  extraChoc:   {id:'extraChoc',   label:{en:'Extra Chocolate',  hi:'अतिरिक्त चॉकलेट',      mr:'जास्त चॉकलेट',      bn:'অতিরিক্ত চকোলেট'}},
+  extraButter: {id:'extraButter', label:{en:'Extra Butter',     hi:'अतिरिक्त मक्खन',       mr:'जास्त बटर',         bn:'অতিরিক্ত মাখন'}},
+  lessSugar:   {id:'lessSugar',   label:{en:'Less Sugar',       hi:'कम चीनी',             mr:'कमी साखर',          bn:'কম চিনি'}},
+  noCream:     {id:'noCream',     label:{en:'No Whipped Cream', hi:'व्हिप्ड क्रीम नहीं',    mr:'व्हीप्ड क्रीम नको',  bn:'হুইপড ক্রিম ছাড়া'}},
+  extraOreo:   {id:'extraOreo',   label:{en:'Extra Oreo',       hi:'अतिरिक्त ओरियो',        mr:'जास्त ओरिओ',        bn:'অতিরিক্ত ওরিও'}},
+  extraStraw:  {id:'extraStraw',  label:{en:'Extra Strawberry', hi:'अतिरिक्त स्ट्रॉबेरी',   mr:'जास्त स्ट्रॉबेरी',   bn:'অতিরিক্ত স্ট্রবেরি'}}
+};
+
+const withDelta = (k, d) => ({ ...OPT[k], delta: d });
+const seed = (id, cat, img, price, name, desc, opts) => ({
+  id, cat, img, price, name, desc, opts: opts.map(([k, d]) => withDelta(k, d))
+});
+
+function DEFAULT_MENU() {
+  return [
+    seed('pizza1','pizza',IMG.pizza,249,
+      {en:'Margherita Pizza',hi:'मार्गेरिटा पिज़्ज़ा',mr:'मार्गेरिटा पिझ्झा',bn:'মার্গারিটা পিৎজা'},
+      {en:'Wood-fired base, fresh mozzarella, basil and tomato sauce.',hi:'लकड़ी के ओवन में सिंकी बेस, ताज़ा मोज़ेरेला, तुलसी और टमाटर सॉस।',mr:'लाकडी ओव्हनमधील बेस, ताजे मोझरेला, तुळस आणि टोमॅटो सॉस.',bn:'কাঠের ওভেনে বেক করা বেস, তাজা মোৎসারেলা, তুলসী ও টমেটো সস।'},
+      [['noOnion',-10],['noCapsicum',-10],['extraCheese',60],['extraOlives',40]]),
+    seed('burger1','burger',IMG.burger,149,
+      {en:'Classic Veg Burger',hi:'क्लासिक वेज बर्गर',mr:'क्लासिक व्हेज बर्गर',bn:'ক্লাসিক ভেজ বার্গার'},
+      {en:'Crisp veg patty, lettuce, cheese slice and house sauce on a toasted bun.',hi:'कुरकुरी वेज टिक्की, लेट्यूस, चीज़ स्लाइस और खास सॉस, टोस्टेड बन में।',mr:'कुरकुरीत व्हेज पॅटी, लेट्यूस, चीज स्लाइस आणि खास सॉस, टोस्ट बनमध्ये.',bn:'মচমচে ভেজ প্যাটি, লেটুস, চিজ স্লাইস ও বিশেষ সস, টোস্ট করা বানে।'},
+      [['noOnion',-10],['noSauce',-15],['noTomato',-8],['extraCheese',25]]),
+    seed('burger2','burger',IMG.burger,199,
+      {en:'Grilled Chicken Burger',hi:'ग्रिल्ड चिकन बर्गर',mr:'ग्रिल्ड चिकन बर्गर',bn:'গ্রিল্ড চিকেন বার্গার'},
+      {en:'Juicy grilled chicken, onion rings, cheese and smoky mayo.',hi:'रसीला ग्रिल्ड चिकन, प्याज़ के छल्ले, चीज़ और स्मोकी मेयो।',mr:'रसाळ ग्रिल्ड चिकन, कांद्याचे रिंग, चीज आणि स्मोकी मेयो.',bn:'রসালো গ্রিল্ড চিকেন, পেঁয়াজের রিং, চিজ ও স্মোকি মেয়ো।'},
+      [['noOnion',-10],['noSauce',-15],['noTomato',-8],['extraCheese',25]]),
+    seed('cake1','cake',IMG.cake,550,
+      {en:'Chocolate Truffle Cake',hi:'चॉकलेट ट्रफल केक',mr:'चॉकलेट ट्रफल केक',bn:'চকোলেট ট্রাফল কেক'},
+      {en:'Dark chocolate sponge layered with truffle cream. Per 500g.',hi:'डार्क चॉकलेट स्पंज और ट्रफल क्रीम की परतें। 500 ग्राम।',mr:'डार्क चॉकलेट स्पंज आणि ट्रफल क्रीमचे थर. 500 ग्रॅम.',bn:'ডার্ক চকোলেট স্পঞ্জ ও ট্রাফল ক্রিমের স্তর। ৫০০ গ্রাম।'},
+      [['noNuts',-40],['extraChoc',50],['lessSugar',-20]]),
+    seed('pastry1','pastry',IMG.pastry,90,
+      {en:'Butter Croissant',hi:'बटर क्रोइसेंट',mr:'बटर क्रोइसंट',bn:'বাটার ক্রোয়াসাঁ'},
+      {en:'Flaky, buttery layers baked golden every morning.',hi:'हर सुबह सुनहरी और परतदार बटर क्रोइसेंट।',mr:'दररोज सकाळी सोनेरी आणि खुसखुशीत बटर क्रोइसंट.',bn:'প্রতি সকালে সোনালি ও স্তরে স্তরে মাখনের ক্রোয়াসাঁ।'},
+      [['extraButter',15],['lessSugar',-5]]),
+    seed('shake1','shake',IMG.shake,179,
+      {en:'Strawberry Shake',hi:'स्ट्रॉबेरी शेक',mr:'स्ट्रॉबेरी शेक',bn:'স্ট্রবেরি শেক'},
+      {en:'Fresh strawberries blended with creamy vanilla milk.',hi:'ताज़ी स्ट्रॉबेरी और मलाईदार वनीला दूध का शेक।',mr:'ताज्या स्ट्रॉबेरी आणि मलईदार व्हॅनिला दुधाचा शेक.',bn:'তাজা স্ট্রবেরি ও ক্রিমি ভ্যানিলা দুধের শেক।'},
+      [['noCream',-25],['extraStraw',40],['lessSugar',-10]]),
+    seed('shake2','shake',IMG.shake,199,
+      {en:'Oreo Cold Coffee Shake',hi:'ओरियो कोल्ड कॉफ़ी शेक',mr:'ओरिओ कोल्ड कॉफी शेक',bn:'ওরিও কোল্ড কফি শেক'},
+      {en:'Chilled coffee, milk and crushed Oreo cookies.',hi:'ठंडी कॉफ़ी, दूध और कुटी हुई ओरियो कुकीज़।',mr:'थंडगार कॉफी, दूध आणि ठेचलेल्या ओरिओ कुकीज.',bn:'ঠান্ডা কফি, দুধ ও গুঁড়ো ওরিও কুকিজ।'},
+      [['noCream',-25],['extraOreo',30]])
+  ];
+}
+
+/* ============================ STATE & HELPERS ============================ */
+const $ = s => document.querySelector(s);
+const val = id => document.getElementById(id).value.trim();
+const load = k => { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } };
+const store = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+let lang = localStorage.getItem('pari_lang') || 'hi';
+let menu = load('pari_menu') || DEFAULT_MENU();
+let cart = load('pari_cart') || [];
+let session = load('pari_session');
+let activeCat = 'all';
+let custom = null;
+let otpState = { phone:'', otp:'', admin:false };
+let afterLogin = null;
+let heroTimer = null;
+if (!load('pari_menu')) store('pari_menu', menu);
+
+const t = k => (T[lang] && T[lang][k]) || T.en[k] || k;
+const ml = o => o ? (o[lang] || o.en || '') : '';
+const money = n => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const findItem = id => menu.find(i => i.id === id);
+const itemUnit = (it, ids) => Math.max(0, it.price + it.opts.filter(o => ids.includes(o.id)).reduce((s, o) => s + o.delta, 0));
+const lineUnit = c => { const it = findItem(c.id); return it ? itemUnit(it, c.opts) : 0; };
+const cartTotal = () => cart.reduce((s, c) => s + lineUnit(c) * c.qty, 0);
+const cartCount = () => cart.reduce((s, c) => s + c.qty, 0);
+const icons = () => window.lucide && lucide.createIcons();
+const isOpen = id => !document.getElementById(id).classList.contains('hidden');
+
+/* ============================ UI HELPERS ============================ */
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'glass px-5 py-3 rounded-xl text-sm shadow-xl card-in w-full text-center';
+  el.textContent = msg;
+  $('#toast').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+function openModal(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('hidden'); el.classList.add('flex'); icons();
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  el.classList.add('hidden'); el.classList.remove('flex');
+}
+function closeAllModals() {
+  ['itemModal','cartModal','checkoutModal','loginModal'].forEach(closeModal);
+}
+function applyI18n() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i]').forEach(el => el.textContent = t(el.dataset.i));
+  $('#langSel').value = lang;
+}
+function updateBadge() {
+  const n = cartCount(), b = $('#cartCount');
+  b.textContent = n; b.style.display = n ? 'flex' : 'none';
+}
+function updateAccount() {
+  $('#accountLabel').textContent = session ? '…' + session.phone.slice(-4) : t('login');
+  $('#adminBtn').style.display = session && session.role === 'admin' ? 'inline-flex' : 'none';
+}
+
+/* ============================ FESTIVALS & HERO ============================ */
+function activeFestival() {
+  const d = new Date();
+  const md = String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  return FESTIVALS.find(f => f.from <= f.to ? (md >= f.from && md <= f.to) : (md >= f.from || md <= f.to)) || null;
+}
+function currentFestival() {
+  const mode = localStorage.getItem('pari_fest') || 'auto';
+  if (mode === 'none') return null;
+  if (mode === 'auto') return activeFestival();
+  return FESTIVALS.find(f => f.id === mode) || null;
+}
+function renderHero() {
+  const f = currentFestival();
+  document.documentElement.style.setProperty('--accent', f ? f.accent : '#0ea5e9');
+  $('#heroTitle').textContent = f ? ml(f.name) : t('heroTitle');
+  $('#heroSub').textContent = f ? ml(f.sub) : t('heroSub');
+  $('#festBadge').innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5"></i><span>${esc(f ? ml(f.name) : t('signature'))}</span>`;
+}
+function buildHero() {
+  const H = CONFIG.hero;
+  const bg = $('#heroBg');
+
+  const startSlideshow = () => {
+    $('#heroVideo').classList.add('hidden');
+    bg.innerHTML = H.images.map((u, i) =>
+      `<div class="hero-slide ${i === 0 ? 'active' : ''}" style="background-image:url('${u}')"></div>`).join('');
+    let i = 0;
+    if (heroTimer) clearInterval(heroTimer);
+    heroTimer = setInterval(() => {
+      const s = bg.querySelectorAll('.hero-slide');
+      if (!s.length) return;
+      s[i].classList.remove('active');
+      i = (i + 1) % s.length;
+      s[i].classList.add('active');
+    }, H.interval);
+  };
+
+  if (H.video) {
+    const v = $('#heroVideo');
+    v.onerror = startSlideshow;
+    v.src = H.video;
+    v.classList.remove('hidden');
+    v.play().catch(() => {});
+  } else {
+    startSlideshow();
+  }
+}
+
+/* ============================ MENU ============================ */
+function renderCats() {
+  const cats = ['all', ...CATS];
+  $('#catChips').innerHTML = cats.map(c =>
+    `<button onclick="setCat('${c}')" class="whitespace-nowrap px-4 py-2 rounded-full text-sm border transition ${activeCat === c ? 'btn-sky border-transparent' : 'bg-white border-[#bae6fd] text-slate-600 hover:border-sky-400'}">${t(c)}</button>`
+  ).join('');
+}
+function setCat(c) { activeCat = c; renderCats(); renderMenu(); }
+function cardHTML(it) {
+  return `<article onclick="openItem('${it.id}')" class="card-in group glass rounded-2xl overflow-hidden cursor-pointer hover:border-sky-400 hover:shadow-lg transition">
+    <div class="relative h-48 overflow-hidden">
+      <img src="${esc(it.img)}" loading="lazy" alt="" class="w-full h-full object-cover transition duration-700 group-hover:scale-105">
+      <span class="absolute top-3 left-3 text-[10px] tracking-widest uppercase bg-white/90 text-sky-700 px-2 py-1 rounded">${t(it.cat)}</span>
+    </div>
+    <div class="p-5">
+      <div class="flex justify-between gap-3">
+        <h3 class="serif text-lg font-semibold">${esc(ml(it.name))}</h3>
+        <span class="acc font-semibold whitespace-nowrap">${money(it.price)}</span>
+      </div>
+      <p class="text-sm text-slate-500 mt-2 line-clamp-2">${esc(ml(it.desc))}</p>
+      <div class="mt-4 flex items-center justify-between text-sm">
+        <span class="text-slate-500 inline-flex items-center gap-1"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i>${t('customize')}</span>
+        <span class="btn-sky px-3 py-1.5 rounded-full text-xs">${t('addToCart')}</span>
+      </div>
+    </div>
+  </article>`;
+}
+function renderMenu() {
+  const list = menu.filter(i => activeCat === 'all' || i.cat === activeCat);
+  $('#menuGrid').innerHTML = list.map(cardHTML).join('');
+  icons();
+}
+
+/* ============================ CUSTOMIZE ============================ */
+function openItem(id) {
+  if (!findItem(id)) return;
+  custom = { id, opts: [], qty: 1 };
+  renderItem(); openModal('itemModal');
+}
+function renderItem() {
+  const it = findItem(custom.id); if (!it) return;
+  const unit = itemUnit(it, custom.opts);
+  const rows = it.opts.map(o => {
+    const on = custom.opts.includes(o.id);
+    return `<label class="flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition ${on ? 'border-sky-400 bg-sky-50' : 'border-[#bae6fd] bg-white'}">
+      <span class="flex items-center gap-3"><input type="checkbox" class="accent-sky-500 w-4 h-4" ${on ? 'checked' : ''} onchange="toggleOpt('${o.id}')"><span>${esc(ml(o.label))}</span></span>
+      <span class="text-sm ${o.delta < 0 ? 'text-emerald-600' : 'text-amber-600'}">${o.delta < 0 ? '−' : '+'}${money(Math.abs(o.delta))}</span>
+    </label>`;
+  }).join('');
+  $('#itemBody').innerHTML = `
+    <img src="${esc(it.img)}" alt="" class="w-full h-64 object-cover rounded-t-3xl">
+    <div class="p-6">
+      <div class="flex justify-between gap-3 items-start">
+        <div><p class="text-xs uppercase tracking-[.25em] acc">${t(it.cat)}</p><h3 class="serif text-2xl font-bold mt-1">${esc(ml(it.name))}</h3></div>
+        <p class="text-xl acc font-semibold">${money(it.price)}</p>
+      </div>
+      <p class="text-slate-500 text-sm mt-2">${esc(ml(it.desc))}</p>
+      <h4 class="mt-6 mb-2 font-semibold">${t('customizations')}</h4>
+      <div class="space-y-2">${rows || '<p class="text-sm text-slate-400">—</p>'}</div>
+      <div class="mt-6 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button onclick="qtyModal(-1)" class="p-2 rounded-full border border-[#bae6fd] bg-white"><i data-lucide="minus" class="w-4 h-4"></i></button>
+          <span class="w-6 text-center">${custom.qty}</span>
+          <button onclick="qtyModal(1)" class="p-2 rounded-full border border-[#bae6fd] bg-white"><i data-lucide="plus" class="w-4 h-4"></i></button>
+        </div>
+        <div class="text-right"><p class="text-xs text-slate-500">${t('total')}</p><p class="text-xl font-bold acc">${money(unit * custom.qty)}</p></div>
+      </div>
+      <button onclick="addToCart()" class="btn-sky w-full mt-6 py-3 rounded-full">${t('addToCart')}</button>
+    </div>`;
+  icons();
+}
+function toggleOpt(oid) {
+  custom.opts.includes(oid) ? custom.opts = custom.opts.filter(x => x !== oid) : custom.opts.push(oid);
+  renderItem();
+}
+function qtyModal(d) { custom.qty = Math.max(1, custom.qty + d); renderItem(); }
+function addToCart() {
+  const key = [...custom.opts].sort().join(',');
+  const ex = cart.find(c => c.id === custom.id && [...c.opts].sort().join(',') === key);
+  if (ex) ex.qty += custom.qty;
+  else cart.push({ id: custom.id, opts: [...custom.opts], qty: custom.qty });
+  store('pari_cart', cart); updateBadge();
+  closeModal('itemModal'); toast(t('added'));
+}
+
+/* ============================ CART ============================ */
+function openCart() { renderCart(); openModal('cartModal'); }
+function renderCart() {
+  const box = $('#cartItems');
+  if (!cart.length) {
+    box.innerHTML = `<p class="text-slate-500 text-center py-10">${t('empty')}</p>`;
+  } else {
+    box.innerHTML = cart.map((c, idx) => {
+      const it = findItem(c.id); if (!it) return '';
+      const extras = c.opts.map(oid => { const o = it.opts.find(x => x.id === oid); return o ? ml(o.label) : null; }).filter(Boolean);
+      return `<div class="flex gap-3 py-4 border-b border-[#bae6fd]">
+        <img src="${esc(it.img)}" alt="" class="w-16 h-16 rounded-xl object-cover">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between gap-2"><p class="font-semibold truncate">${esc(ml(it.name))}</p><p class="acc whitespace-nowrap">${money(lineUnit(c) * c.qty)}</p></div>
+          ${extras.length ? `<p class="text-xs text-slate-500 mt-1">${esc(extras.join(' · '))}</p>` : ''}
+          <div class="mt-2 flex items-center gap-3">
+            <button onclick="changeCart(${idx},-1)" class="p-1 rounded-full border border-[#bae6fd] bg-white"><i data-lucide="minus" class="w-3.5 h-3.5"></i></button>
+            <span>${c.qty}</span>
+            <button onclick="changeCart(${idx},1)" class="p-1 rounded-full border border-[#bae6fd] bg-white"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+            <button onclick="changeCart(${idx},0,true)" class="ml-auto text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  const total = cartTotal();
+  const short = total < CONFIG.minOrder;
+  $('#cartTotal').textContent = money(total);
+  const warn = $('#minWarn');
+  warn.classList.toggle('hidden', !(cart.length && short));
+  warn.textContent = cart.length && short ? `${t('minWarn')} ${t('remaining').replace('{x}', money(CONFIG.minOrder - total))}` : '';
+  $('#checkoutBtn').disabled = !cart.length || short;
+  updateBadge(); icons();
+}
+function changeCart(idx, d, remove = false) {
+  const c = cart[idx]; if (!c) return;
+  c.qty = remove ? 0 : c.qty + d;
+  if (c.qty < 1) cart.splice(idx, 1);
+  store('pari_cart', cart); renderCart();
+}
+
+/* ============================ AUTH ============================ */
+function accountClick() {
+  if (!session) { openLogin('phone'); return; }
+  if (confirm(t('confirmLogout'))) {
+    session = null; localStorage.removeItem('pari_session');
+    updateAccount(); closeAdmin(); toast(t('loggedOut'));
+  }
+}
+function openLogin(step) { renderLogin(step || 'phone'); openModal('loginModal'); }
+function renderLogin(step) {
+  let inner = '';
+  if (step === 'phone') inner = `
+    <h3 class="serif text-2xl font-bold">${t('customerLoginTitle')}</h3>
+    <label class="lbl mt-5">${t('phone')}</label>
+    <input id="lgPhone" type="tel" maxlength="16" class="inp" placeholder="+91 XXXXX XXXXX">
+    <button onclick="sendOtp()" class="btn-sky w-full mt-5 py-3 rounded-full">${t('sendOtp')}</button>`;
+  else if (step === 'otp') inner = `
+    <h3 class="serif text-2xl font-bold">${t('otp')}</h3>
+    <p class="text-sm text-slate-500 mt-1">+91 ••••••${otpState.phone.slice(-4)}</p>
+    <input id="lgOtp" type="text" inputmode="numeric" maxlength="4" class="inp mt-5 text-center text-2xl tracking-[.5em]">
+    <button onclick="verifyOtp()" class="btn-sky w-full mt-5 py-3 rounded-full">${t('verify')}</button>`;
+  else inner = `
+    <h3 class="serif text-2xl font-bold acc">${t('adminLoginTitle')}</h3>
+    <label class="lbl mt-5">${t('password')}</label>
+    <input id="lgPw" type="password" class="inp" onkeydown="if(event.key==='Enter')verifyAdmin()">
+    <button onclick="verifyAdmin()" class="btn-sky w-full mt-5 py-3 rounded-full flex items-center justify-center gap-2"><i data-lucide="lock" class="w-4 h-4"></i>${t('unlock')}</button>`;
+  $('#loginBody').innerHTML = `<div class="p-6 pt-14">${inner}</div>`;
+  icons();
+}
+function sendOtp() {
+  const digits = val('lgPhone').replace(/\D/g, '').slice(-10);
+  if (digits.length !== 10) { toast(t('invalidPhone')); return; }
+  otpState = { phone: digits, otp: String(Math.floor(1000 + Math.random() * 9000)), admin: digits === CONFIG.adminPhone };
+  if (otpState.admin) { renderLogin('admin'); return; }
+  renderLogin('otp');
+  toast(`${t('otpSent')} · Demo OTP: ${otpState.otp}`);
+}
+function verifyOtp() {
+  if (val('lgOtp') !== otpState.otp) { toast(t('invalidOtp')); return; }
+  finishLogin({ phone: otpState.phone, role: 'customer' });
+}
+function verifyAdmin() {
+  if (val('lgPw') !== CONFIG.adminPassword) { toast(t('wrongPw')); return; }
+  finishLogin({ phone: otpState.phone || CONFIG.adminPhone, role: 'admin' });
+}
+function finishLogin(s) {
+  session = s; store('pari_session', s);
+  closeModal('loginModal'); updateAccount(); toast(t('welcome'));
+  if (s.role === 'admin') { openAdmin(); return; }
+  if (afterLogin) { const f = afterLogin; afterLogin = null; f(); }
+}
+
+/* ============================ CHECKOUT & WHATSAPP ============================ */
+function openCheckout() {
+  if (!cart.length) return;
+  if (cartTotal() < CONFIG.minOrder) { toast(t('minWarn')); return; }
+  if (!session || session.role !== 'customer') {
+    afterLogin = openCheckout;
+    closeModal('cartModal');
+    openLogin('phone');
+    toast(t('loginFirst'));
+    return;
+  }
+  closeModal('cartModal');
+  $('#ckPhone').value = session.phone;
+  openModal('checkoutModal');
+}
+function placeOrder() {
+  const name = val('ckName'), phone = val('ckPhone').replace(/\D/g, '').slice(-10);
+  const addr = val('ckAddr'), alt = val('ckAlt'), note = val('ckNote');
+  if (!name || phone.length !== 10 || !addr) { toast(t('fillAll')); return; }
+  const total = cartTotal();
+  if (total < CONFIG.minOrder) { toast(t('minWarn')); return; }
+
+  const lines = cart.map((c, i) => {
+    const it = findItem(c.id); if (!it) return null;
+    const extras = c.opts.map(oid => {
+      const o = it.opts.find(x => x.id === oid);
+      return o ? `${o.label.en} (${o.delta >= 0 ? '+' : '-'}₹${Math.abs(o.delta)})` : null;
+    }).filter(Boolean);
+    return `${i + 1}. ${it.name.en} x${c.qty} — ₹${lineUnit(c) * c.qty}` + (extras.length ? `\n   Customizations: ${extras.join(', ')}` : '');
+  }).filter(Boolean).join('\n');
+
+  const msg = [
+    '*NEW ORDER - PARI BAKERS*',
+    `Customer Name: ${name}`,
+    `Phone: ${phone}`,
+    `Delivery Address: ${addr}`,
+    alt ? `Alternate Address: ${alt}` : '',
+    '',
+    '*Items:*',
+    lines,
+    '',
+    `*Total: ₹${total}*`,
+    note ? `Note: ${note}` : ''
+  ].filter(x => x !== '').join('\n');
+
+  // मोबाइल पर popup block न हो, इसलिए सीधे लिंक खोलते हैं
+  window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
+
+  cart = []; store('pari_cart', cart);
+  ['ckName','ckAddr','ckAlt','ckNote'].forEach(id => document.getElementById(id).value = '');
+  closeModal('checkoutModal'); updateBadge(); toast(t('orderSent'));
+}
+
+/* ============================ ADMIN ============================ */
+function openAdmin() {
+  if (!session || session.role !== 'admin') { openLogin('phone'); return; }
+  renderAdmin();
+  $('#adminPanel').classList.remove('hidden');
+  icons();
+}
+function closeAdmin() { $('#adminPanel').classList.add('hidden'); }
+function lockAdmin() {
+  session = null; localStorage.removeItem('pari_session');
+  closeAdmin(); updateAccount();
+}
+function parseOpts(str) {
+  return str.split(',').map(s => s.trim()).filter(Boolean).map(s => {
+    const m = s.match(/^(.*?):\s*([+-]?\s*\d+(\.\d+)?)$/);
+    if (!m) return null;
+    const label = m[1].trim();
+    const delta = Number(m[2].replace(/\s/g, ''));
+    const base = Object.values(OPT).find(o => o.label.en.toLowerCase() === label.toLowerCase());
+    return base ? { ...base, delta }
+      : { id: 'c-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-'), label: { en: label, hi: label, mr: label, bn: label }, delta };
+  }).filter(Boolean);
+}
+const optsToStr = opts => opts.map(o => `${o.label.en}:${o.delta > 0 ? '+' : ''}${o.delta}`).join(', ');
+
+function renderAdmin() {
+  const fest = localStorage.getItem('pari_fest') || 'auto';
+  $('#festSel').innerHTML = [['auto', t('auto')], ['none', t('none')], ...FESTIVALS.map(f => [f.id, ml(f.name)])]
+    .map(([v, l]) => `<option value="${v}" ${v === fest ? 'selected' : ''}>${esc(l)}</option>`).join('');
+
+  $('#adminList').innerHTML = menu.map(it => `
+    <div class="glass rounded-2xl p-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+      <img src="${esc(it.img)}" alt="" class="md:col-span-1 w-full md:w-16 h-16 object-cover rounded-xl">
+      <div class="md:col-span-3"><label class="lbl">${t('name')} (EN)</label>
+        <input class="inp" value="${esc(it.name.en)}" onchange="updItem('${it.id}','name',this.value)"></div>
+      <div class="md:col-span-2"><label class="lbl">${t('category')}</label>
+        <select class="inp" onchange="updItem('${it.id}','cat',this.value)">
+          ${CATS.map(c => `<option value="${c}" ${c === it.cat ? 'selected' : ''}>${t(c)}</option>`).join('')}
+        </select></div>
+      <div class="md:col-span-1"><label class="lbl">${t('price')}</label>
+        <input type="number" min="0" class="inp" value="${it.price}" onchange="updItem('${it.id}','price',this.value)"></div>
+      <div class="md:col-span-4"><label class="lbl">${t('options')}</label>
+        <input class="inp" value="${esc(optsToStr(it.opts))}" onchange="updItem('${it.id}','opts',this.value)"></div>
+      <div class="md:col-span-1 flex md:justify-end md:pt-5">
+        <button onclick="delItem('${it.id}')" class="p-2 text-red-500 rounded-lg border border-red-200 bg-white"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>
+      <div class="md:col-span-6"><label class="lbl">${t('image')}</label>
+        <input class="inp" value="${esc(it.img)}" onchange="updItem('${it.id}','img',this.value)"></div>
+      <div class="md:col-span-6"><label class="lbl">Description (EN)</label>
+        <input class="inp" value="${esc(it.desc.en)}" onchange="updItem('${it.id}','desc',this.value)"></div>
+    </div>`).join('');
+  icons();
+}
+function saveMenu() {
+  store('pari_menu', menu);
+  renderMenu(); renderCart(); updateBadge();
+}
+function updItem(id, field, v) {
+  const it = findItem(id); if (!it) return;
+  if (field === 'name') it.name.en = v.trim() || it.name.en;
+  else if (field === 'desc') it.desc.en = v.trim();
+  else if (field === 'price') it.price = Math.max(0, Number(v) || 0);
+  else if (field === 'opts') it.opts = parseOpts(v);
+  else it[field] = v.trim();
+  saveMenu(); toast(t('menuUpdated'));
+}
+function addDish() {
+  const en = val('nEn');
+  const price = Number(val('nPrice'));
+  if (!en || !price) { toast(t('fillAll')); return; }
+  const name = { en, hi: val('nHi') || en, mr: val('nMr') || en, bn: val('nBn') || en };
+  const d = val('dEn') || '';
+  const desc = { en: d, hi: val('dHi') || d, mr: val('dMr') || d, bn: val('dBn') || d };
+  const cat = val('nCat');
+  menu.push({ id: 'd' + Date.now(), cat, img: val('nImg') || IMG[cat], price, name, desc, opts: parseOpts(val('nOpts')) });
+  saveMenu(); renderAdmin(); toast(t('dishAdded'));
+  ['nEn','nHi','nMr','nBn','dEn','dHi','dMr','dBn','nPrice','nImg','nOpts'].forEach(i => document.getElementById(i).value = '');
+}
+function delItem(id) {
+  if (!confirm(t('delConfirm'))) return;
+  menu = menu.filter(i => i.id !== id);
+  saveMenu(); renderAdmin();
+}
+function resetMenu() {
+  if (!confirm(t('resetConfirm'))) return;
+  menu = DEFAULT_MENU(); saveMenu(); renderAdmin();
+}
+function setFest(v) {
+  localStorage.setItem('pari_fest', v);
+  renderHero(); icons(); toast(t('menuUpdated'));
+}
+
+/* ============================ RENDER ALL & INIT ============================ */
+function renderAll() {
+  applyI18n(); renderHero(); renderCats(); renderMenu(); updateAccount(); updateBadge();
+  if (isOpen('cartModal')) renderCart();
+  if (isOpen('itemModal') && custom) renderItem();
+  if (!$('#adminPanel').classList.contains('hidden')) renderAdmin();
+  icons();
+}
+
+$('#langSel').addEventListener('change', e => {
+  lang = e.target.value; localStorage.setItem('pari_lang', lang); renderAll();
+});
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllModals(); });
+
+// एक ही ब्राउज़र की दूसरी टैब में बदलाव तुरंत दिखें
+window.addEventListener('storage', e => {
+  if (['pari_menu', 'pari_cart', 'pari_fest'].includes(e.key)) {
+    menu = load('pari_menu') || DEFAULT_MENU();
+    cart = load('pari_cart') || [];
+    renderAll();
+  }
+});
+
+// स्प्लैश स्क्रीन: पहली बार खुलते ही चमक, फिर होम पेज
+setTimeout(() => {
+  const s = document.getElementById('splash');
+  s.classList.add('gone');
+  setTimeout(() => s.remove(), 900);
+}, CONFIG.splashMs);
+
+buildHero();
+renderAll();
+</script>
+</body>
+</html>
